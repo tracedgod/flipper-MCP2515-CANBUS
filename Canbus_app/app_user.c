@@ -10,6 +10,91 @@ void makePaths(App* app) {
     }
 }
 
+static void closeConfigFile(FlipperFormat* file) {
+    if(file == NULL) return;
+    flipper_format_file_close(file);
+    flipper_format_free(file);
+}
+
+void saveConfig(App* app) {
+    furi_assert(app);
+    FURI_LOG_D("[CANBUS]", "Saving Config");
+    FlipperFormat* fff_file = flipper_format_file_alloc(app->storage);
+
+    // delete file first if exists
+    if(storage_file_exists(app->storage, CONFIG_FILE_SAVE_PATH)) {
+        storage_simply_remove(app->storage, CONFIG_FILE_SAVE_PATH);
+    }
+
+    // open file, create if not exists
+    if(!storage_common_stat(app->storage, CONFIG_FILE_SAVE_PATH, NULL) == FSE_OK) {
+        FURI_LOG_D(
+            "[CANBUS]", "Config file %s not found, will create new.", CONFIG_FILE_SAVE_PATH);
+    }
+
+    if(!flipper_format_file_open_new(fff_file, CONFIG_FILE_SAVE_PATH)) {
+        FURI_LOG_E("[CANBUS]", "Error creating config file: %s", CONFIG_FILE_SAVE_PATH);
+        return;
+    }
+
+    // store settings
+    flipper_format_write_header_cstr(fff_file, CONFIG_FILE_HEADER, CONFIG_FILE_VERSION);
+
+    uint32_t temp_bitrate = (uint32_t)app->mcp_can->bitRate;
+    uint32_t temp_clck = (uint32_t)app->mcp_can->clck;
+    flipper_format_write_uint32(fff_file, CONFIG_FILE_KEY_BITRATE, &temp_bitrate, 1);
+    flipper_format_write_uint32(fff_file, CONFIG_FILE_KEY_CRYSTAL, &temp_clck, 1);
+    flipper_format_write_uint32(fff_file, CONFIG_FILE_KEY_SAVELOG, &app->save_logs, 1);
+
+    closeConfigFile(fff_file);
+}
+
+void readConfig(App* app) {
+    furi_assert(app);
+    FlipperFormat* fff_file = flipper_format_file_alloc(app->storage);
+
+    if(storage_common_stat(app->storage, CONFIG_FILE_SAVE_PATH, NULL) != FSE_OK) {
+        closeConfigFile(fff_file);
+        return;
+    }
+    uint32_t file_version;
+    FuriString* temp_str = furi_string_alloc();
+
+    if(!flipper_format_file_open_existing(fff_file, CONFIG_FILE_SAVE_PATH)) {
+        FURI_LOG_E("[CANBUS]", "Cannot open file: %s", CONFIG_FILE_SAVE_PATH);
+        closeConfigFile(fff_file);
+        furi_string_free(temp_str);
+        return;
+    }
+
+    if(!flipper_format_read_header(fff_file, temp_str, &file_version)) {
+        FURI_LOG_E("[CANBUS]", "Missing header data");
+        closeConfigFile(fff_file);
+        furi_string_free(temp_str);
+        return;
+    }
+
+    furi_string_free(temp_str);
+
+    if(file_version < CONFIG_FILE_VERSION) {
+        FURI_LOG_I("[CANBUS]", "Old config version, will be removed");
+        closeConfigFile(fff_file);
+        return;
+    }
+
+    uint32_t temp_bitrate, temp_clck;
+
+    flipper_format_read_uint32(fff_file, CONFIG_FILE_KEY_BITRATE, &temp_bitrate, 1);
+    app->mcp_can->bitRate = (MCP_BITRATE)temp_bitrate;
+    flipper_format_read_uint32(fff_file, CONFIG_FILE_KEY_CRYSTAL, &temp_clck, 1);
+    app->mcp_can->clck = (MCP_CLOCK)temp_clck;
+    flipper_format_read_uint32(fff_file, CONFIG_FILE_KEY_SAVELOG, &app->save_logs, 1);
+
+    flipper_format_rewind(fff_file);
+
+    closeConfigFile(fff_file);
+}
+
 static bool app_scene_costum_callback(void* context, uint32_t costum_event) {
     furi_assert(context);
     App* app = context;
@@ -158,6 +243,8 @@ int app_main(void* p) {
 
     App* app = app_alloc();
 
+    readConfig(app);
+
     Gui* gui = furi_record_open(RECORD_GUI);
 
     view_dispatcher_attach_to_gui(app->view_dispatcher, gui, ViewDispatcherTypeFullscreen);
@@ -166,6 +253,8 @@ int app_main(void* p) {
 
     view_dispatcher_run(app->view_dispatcher);
     furi_record_close(RECORD_GUI);
+
+    saveConfig(app);
 
     app_free(app);
 

@@ -90,4 +90,5 @@ bool app_scene_settings_on_event(void* context, SceneManagerEvent event) {
 void app_scene_settings_on_exit(void* context) {
     App* app = context;
     variable_item_list_reset(app->varList);
+    saveConfig(app);
 }

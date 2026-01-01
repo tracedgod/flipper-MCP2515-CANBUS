@@ -17,6 +17,8 @@
 #include <storage/storage.h>
 #include <gui/modules/loading.h>
 
+#include <flipper_format/flipper_format_i.h>
+
 #include "scenes_config/app_scene_functions.h"
 
 #include "libraries/mcp_can_2515.h"
@@ -35,6 +37,13 @@
 
 #define PATHEXPORTS APP_DATA_PATH("exports")
 #define PATHLOGS    APP_DATA_PATH("logs")
+
+#define CONFIG_FILE_VERSION     1
+#define CONFIG_FILE_SAVE_PATH   APP_DATA_PATH("canbus_app_config.cfg")
+#define CONFIG_FILE_HEADER      "Canbus_app Config File"
+#define CONFIG_FILE_KEY_BITRATE "bitrate"
+#define CONFIG_FILE_KEY_CRYSTAL "crystal_clk"
+#define CONFIG_FILE_KEY_SAVELOG "savelogs"
 
 #define DEVICE_NO_CONNECTED (0xFF)
 
@@ -86,7 +95,7 @@ typedef struct {
     File* log_file;
     char* log_file_path;
     bool log_file_ready;
-    uint8_t save_logs;
+    uint32_t save_logs;
 
     // New Logs Objecs
     DialogEx* dialog_ex;
@@ -228,6 +237,9 @@ void draw_device_no_connected(App* app);
 void draw_transmition_failure(App* app);
 void draw_send_ok(App* app);
 void draw_send_wrong(App* app);
+
+void saveConfig(App* app);
+void readConfig(App* app);
 
 // Thread to sniff
 int32_t worker_sniffing(void* context);

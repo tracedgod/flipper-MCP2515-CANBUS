@@ -314,17 +314,17 @@ typedef enum {
 
 // MCP2515 BITRATES VALUES
 typedef enum {
-    MCP_125KBPS,
-    MCP_250KBPS,
-    MCP_500KBPS,
-    MCP_1000KBPS,
+    MCP_125KBPS = 0,
+    MCP_250KBPS = 1,
+    MCP_500KBPS = 2,
+    MCP_1000KBPS = 3,
 } MCP_BITRATE;
 
 // MCP CLOCKS
 typedef enum {
-    MCP_8MHZ,
-    MCP_16MHZ,
-    MCP_20MHZ,
+    MCP_8MHZ = 0,
+    MCP_16MHZ = 1,
+    MCP_20MHZ = 2,
 } MCP_CLOCK;
 
 // This a struct to define the Can Frame
