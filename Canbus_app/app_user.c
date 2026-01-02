@@ -42,8 +42,10 @@ void saveConfig(App* app) {
 
     uint32_t temp_bitrate = (uint32_t)app->mcp_can->bitRate;
     uint32_t temp_clck = (uint32_t)app->mcp_can->clck;
+    uint32_t temp_slcan_enabled = (uint32_t)app->slcan_enabled;
     flipper_format_write_uint32(fff_file, CONFIG_FILE_KEY_BITRATE, &temp_bitrate, 1);
     flipper_format_write_uint32(fff_file, CONFIG_FILE_KEY_CRYSTAL, &temp_clck, 1);
+    flipper_format_write_uint32(fff_file, CONFIG_FILE_KEY_SLCAN_ENABLED, &temp_slcan_enabled, 1);
     flipper_format_write_uint32(fff_file, CONFIG_FILE_KEY_SAVELOG, &app->save_logs, 1);
 
     closeConfigFile(fff_file);
@@ -82,12 +84,14 @@ void readConfig(App* app) {
         return;
     }
 
-    uint32_t temp_bitrate, temp_clck;
+    uint32_t temp_bitrate, temp_clck, temp_slcan_enabled;
 
     flipper_format_read_uint32(fff_file, CONFIG_FILE_KEY_BITRATE, &temp_bitrate, 1);
     app->mcp_can->bitRate = (MCP_BITRATE)temp_bitrate;
     flipper_format_read_uint32(fff_file, CONFIG_FILE_KEY_CRYSTAL, &temp_clck, 1);
     app->mcp_can->clck = (MCP_CLOCK)temp_clck;
+    flipper_format_read_uint32(fff_file, CONFIG_FILE_KEY_SLCAN_ENABLED, &temp_slcan_enabled, 1);
+    app->slcan_enabled = (bool)temp_slcan_enabled;
     flipper_format_read_uint32(fff_file, CONFIG_FILE_KEY_SAVELOG, &app->save_logs, 1);
 
     flipper_format_rewind(fff_file);
@@ -239,11 +243,13 @@ static void app_free(App* app) {
 int app_main(void* p) {
     UNUSED(p);
 
-    SLCAN_open_port();
-
     App* app = app_alloc();
 
     readConfig(app);
+
+    if(app->slcan_enabled) {
+        SLCAN_open_port();
+    }
 
     Gui* gui = furi_record_open(RECORD_GUI);
 
@@ -256,9 +262,11 @@ int app_main(void* p) {
 
     saveConfig(app);
 
-    app_free(app);
+    if(app->slcan_enabled) {
+        SLCAN_close_port();
+    }
 
-    SLCAN_close_port();
+    app_free(app);
 
     return 0;
 }

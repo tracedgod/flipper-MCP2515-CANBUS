@@ -100,11 +100,40 @@ void dialog_SLCAN_callback(DialogExResult result, void* context) {
     }
 }
 
+void dialog_SLCAN_disabled_callback(DialogExResult result, void* context) {
+    App* app = context;
+
+    switch(result) {
+    case DialogExResultCenter:
+        scene_manager_previous_scene(app->scene_manager);
+        break;
+    default:
+        break;
+    }
+}
+
 void app_scene_SLCAN_2_CAN_on_enter(void* context) {
     furi_assert(context);
     App* app = context;
 
-    if(mcp2515_init(app->mcp_can) != ERROR_OK) {
+    if(!app->slcan_enabled) {
+        // Show message that SLCAN is disabled
+        dialog_ex_reset(app->dialog_ex);
+        dialog_ex_set_context(app->dialog_ex, app);
+        dialog_ex_set_result_callback(app->dialog_ex, dialog_SLCAN_disabled_callback);
+
+        dialog_ex_set_header(
+            app->dialog_ex,
+            "SLCAN is disabled.\nPlease enable it in\nSettings to use this feature.",
+            64,
+            27,
+            AlignCenter,
+            AlignCenter);
+
+        dialog_ex_set_center_button_text(app->dialog_ex, "OK");
+
+        view_dispatcher_switch_to_view(app->view_dispatcher, DialogView);
+    } else if(mcp2515_init(app->mcp_can) != ERROR_OK) {
         draw_device_no_connected(app);
         view_dispatcher_switch_to_view(app->view_dispatcher, ViewWidget);
     } else {

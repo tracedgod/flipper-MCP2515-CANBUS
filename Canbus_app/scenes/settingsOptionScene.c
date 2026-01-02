@@ -6,11 +6,16 @@ static uint8_t currentClock = MCP_16MHZ;
 // To save the current Bitrate
 static uint8_t currentBitrate = MCP_500KBPS;
 
+// To save the current SLCAN Enabled setting
+static uint8_t currentSLCANEnabled = 1;
 // Texts for the bitrate
 static const char* bitratesValues[] = {"125KBPS", "250KBPS", "500KBPS", "1000KBPS"};
 
 // Text for the clocks
 static const char* clockValues[] = {"8MHz", "16MHz", "20MHz"};
+
+// Text for the SLCAN Enabled setting
+static const char* slcanEnabledValues[] = {"Disabled", "Enabled"};
 
 // Text to save the sniffing
 static const char* save_logs[] = {"No Save", "Save All", "Only Address"};
@@ -42,6 +47,12 @@ void callback_options(VariableItem* item) {
 
         break;
 
+    case SLCANEnabledOption:
+        variable_item_set_current_value_text(item, slcanEnabledValues[index]);
+        currentSLCANEnabled = index;
+        app->slcan_enabled = index;
+        break;
+
     case SaveLogsOption:
         variable_item_set_current_value_text(item, save_logs[index]);
         app->save_logs = index;
@@ -59,6 +70,7 @@ void app_scene_settings_on_enter(void* context) {
 
     currentBitrate = app->mcp_can->bitRate;
     currentClock = app->mcp_can->clck;
+    currentSLCANEnabled = app->slcan_enabled;
 
     variable_item_list_reset(app->varList);
 
@@ -75,7 +87,14 @@ void app_scene_settings_on_enter(void* context) {
     variable_item_set_current_value_text(item, clockValues[currentClock]);
 
     // Third Item
-    item = variable_item_list_add(app->varList, "Save LOGS?", 3, callback_options, app);
+    item = variable_item_list_add(
+        app->varList, "SLCAN Enabled", COUNT_OF(slcanEnabledValues), callback_options, app);
+    variable_item_set_current_value_index(item, currentSLCANEnabled);
+    variable_item_set_current_value_text(item, slcanEnabledValues[currentSLCANEnabled]);
+
+    // Fourth Item
+    item = variable_item_list_add(
+        app->varList, "Save LOGS?", COUNT_OF(save_logs), callback_options, app);
     variable_item_set_current_value_index(item, app->save_logs);
     variable_item_set_current_value_text(item, save_logs[app->save_logs]);
 
@@ -97,4 +116,10 @@ void app_scene_settings_on_exit(void* context) {
     App* app = context;
     variable_item_list_reset(app->varList);
     saveConfig(app);
+    // Start or stop SLCAN based on the setting when exiting
+    if(app->slcan_enabled) {
+        SLCAN_open_port();
+    } else {
+        SLCAN_close_port();
+    }
 }

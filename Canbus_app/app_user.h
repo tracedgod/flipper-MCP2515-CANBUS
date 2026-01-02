@@ -38,12 +38,13 @@
 #define PATHEXPORTS APP_DATA_PATH("exports")
 #define PATHLOGS    APP_DATA_PATH("logs")
 
-#define CONFIG_FILE_VERSION     1
-#define CONFIG_FILE_SAVE_PATH   APP_DATA_PATH("canbus_app_config.cfg")
-#define CONFIG_FILE_HEADER      "Canbus_app Config File"
-#define CONFIG_FILE_KEY_BITRATE "bitrate"
-#define CONFIG_FILE_KEY_CRYSTAL "crystal_clk"
-#define CONFIG_FILE_KEY_SAVELOG "savelogs"
+#define CONFIG_FILE_VERSION           1
+#define CONFIG_FILE_SAVE_PATH         APP_DATA_PATH("canbus_app_config.cfg")
+#define CONFIG_FILE_HEADER            "Canbus_app Config File"
+#define CONFIG_FILE_KEY_BITRATE       "bitrate"
+#define CONFIG_FILE_KEY_CRYSTAL       "crystal_clk"
+#define CONFIG_FILE_KEY_SLCAN_ENABLED "SLCAN_enabled"
+#define CONFIG_FILE_KEY_SAVELOG       "savelogs"
 
 #define DEVICE_NO_CONNECTED (0xFF)
 
@@ -96,6 +97,7 @@ typedef struct {
     char* log_file_path;
     bool log_file_ready;
     uint32_t save_logs;
+    bool slcan_enabled;
 
     // New Logs Objecs
     DialogEx* dialog_ex;
@@ -157,6 +159,7 @@ typedef enum {
 typedef enum {
     BitrateOption,
     CristyalClkOption,
+    SLCANEnabledOption,
     SaveLogsOption
 } OptionSettings;
 
