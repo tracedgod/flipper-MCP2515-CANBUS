@@ -771,3 +771,109 @@ ERROR_CAN mcp2515_start(MCP2515* mcp_can) {
 ERROR_CAN mcp2515_init(MCP2515* mcp_can) {
     return mcp2515_start(mcp_can);
 }
+
+// Re-init the mcp2515 device with new bitrate/clock settings
+ERROR_CAN mcp2515_reinit(MCP2515* mcp_can) {
+    // Enter configuration mode
+    if(!set_config_mode(mcp_can)) {
+        return ERROR_FAILINIT;
+    }
+
+    // Configure bitrate registers (CNF1, CNF2, CNF3)
+    uint8_t cfg1 = 0, cfg2 = 0, cfg3 = 0;
+
+    switch(mcp_can->clck) {
+    case MCP_8MHZ:
+        switch(mcp_can->bitRate) {
+        case MCP_125KBPS:
+            cfg1 = MCP_8MHz_125kBPS_CFG1;
+            cfg2 = MCP_8MHz_125kBPS_CFG2;
+            cfg3 = MCP_8MHz_125kBPS_CFG3;
+            break;
+        case MCP_250KBPS:
+            cfg1 = MCP_8MHz_250kBPS_CFG1;
+            cfg2 = MCP_8MHz_250kBPS_CFG2;
+            cfg3 = MCP_8MHz_250kBPS_CFG3;
+            break;
+        case MCP_500KBPS:
+            cfg1 = MCP_8MHz_500kBPS_CFG1;
+            cfg2 = MCP_8MHz_500kBPS_CFG2;
+            cfg3 = MCP_8MHz_500kBPS_CFG3;
+            break;
+        case MCP_1000KBPS:
+            cfg1 = MCP_8MHz_1000kBPS_CFG1;
+            cfg2 = MCP_8MHz_1000kBPS_CFG2;
+            cfg3 = MCP_8MHz_1000kBPS_CFG3;
+            break;
+        default:
+            return ERROR_WRONG_BITRATE;
+        }
+        break;
+
+    case MCP_16MHZ:
+        switch(mcp_can->bitRate) {
+        case MCP_125KBPS:
+            cfg1 = MCP_16MHz_125kBPS_CFG1;
+            cfg2 = MCP_16MHz_125kBPS_CFG2;
+            cfg3 = MCP_16MHz_125kBPS_CFG3;
+            break;
+        case MCP_250KBPS:
+            cfg1 = MCP_16MHz_250kBPS_CFG1;
+            cfg2 = MCP_16MHz_250kBPS_CFG2;
+            cfg3 = MCP_16MHz_250kBPS_CFG3;
+            break;
+        case MCP_500KBPS:
+            cfg1 = MCP_16MHz_500kBPS_CFG1;
+            cfg2 = MCP_16MHz_500kBPS_CFG2;
+            cfg3 = MCP_16MHz_500kBPS_CFG3;
+            break;
+        case MCP_1000KBPS:
+            cfg1 = MCP_16MHz_1000kBPS_CFG1;
+            cfg2 = MCP_16MHz_1000kBPS_CFG2;
+            cfg3 = MCP_16MHz_1000kBPS_CFG3;
+            break;
+        default:
+            return ERROR_WRONG_BITRATE;
+        }
+        break;
+
+    case MCP_20MHZ:
+        switch(mcp_can->bitRate) {
+        case MCP_125KBPS:
+            cfg1 = MCP_20MHz_125kBPS_CFG1;
+            cfg2 = MCP_20MHz_125kBPS_CFG2;
+            cfg3 = MCP_20MHz_125kBPS_CFG3;
+            break;
+        case MCP_250KBPS:
+            cfg1 = MCP_20MHz_250kBPS_CFG1;
+            cfg2 = MCP_20MHz_250kBPS_CFG2;
+            cfg3 = MCP_20MHz_250kBPS_CFG3;
+            break;
+        case MCP_500KBPS:
+            cfg1 = MCP_20MHz_500kBPS_CFG1;
+            cfg2 = MCP_20MHz_500kBPS_CFG2;
+            cfg3 = MCP_20MHz_500kBPS_CFG3;
+            break;
+        case MCP_1000KBPS:
+            cfg1 = MCP_20MHz_1000kBPS_CFG1;
+            cfg2 = MCP_20MHz_1000kBPS_CFG2;
+            cfg3 = MCP_20MHz_1000kBPS_CFG3;
+            break;
+        default:
+            return ERROR_WRONG_BITRATE;
+        }
+        break;
+    }
+
+    // Write configuration registers
+    set_register(mcp_can->spi, MCP_CNF1, cfg1);
+    set_register(mcp_can->spi, MCP_CNF2, cfg2);
+    set_register(mcp_can->spi, MCP_CNF3, cfg3);
+
+    // Exit configuration mode (return to normal mode)
+    if(!set_normal_mode(mcp_can)) {
+        return ERROR_FAILINIT;
+    }
+
+    return ERROR_OK;
+}

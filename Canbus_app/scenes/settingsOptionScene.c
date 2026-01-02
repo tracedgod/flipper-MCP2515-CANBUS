@@ -29,12 +29,16 @@ void callback_options(VariableItem* item) {
         variable_item_set_current_value_text(item, bitratesValues[index]);
         currentBitrate = index;
         app->mcp_can->bitRate = index;
+        // Reinitialize MCP2515 with new bitrate
+        mcp2515_reinit(app->mcp_can);
         break;
 
     case CristyalClkOption:
         variable_item_set_current_value_text(item, clockValues[index]);
         currentClock = index;
         app->mcp_can->clck = index;
+        // Reinitialize MCP2515 with new clock
+        mcp2515_reinit(app->mcp_can);
 
         break;
 
@@ -54,6 +58,7 @@ void app_scene_settings_on_enter(void* context) {
     VariableItem* item;
 
     currentBitrate = app->mcp_can->bitRate;
+    currentClock = app->mcp_can->clck;
 
     variable_item_list_reset(app->varList);
 
@@ -64,8 +69,9 @@ void app_scene_settings_on_enter(void* context) {
     variable_item_set_current_value_text(item, bitratesValues[currentBitrate]);
 
     // Second Item
-    item = variable_item_list_add(app->varList, "Clock", 0, callback_options, app);
-    variable_item_set_current_value_index(item, 0);
+    item = variable_item_list_add(
+        app->varList, "Clock", COUNT_OF(clockValues), callback_options, app);
+    variable_item_set_current_value_index(item, currentClock);
     variable_item_set_current_value_text(item, clockValues[currentClock]);
 
     // Third Item

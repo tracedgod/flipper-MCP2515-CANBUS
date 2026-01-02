@@ -355,6 +355,9 @@ MCP2515* mcp_alloc(MCP_MODE mode, MCP_CLOCK clck, MCP_BITRATE bitrate);
 // To init the MCP2515
 ERROR_CAN mcp2515_init(MCP2515* mcp_can);
 
+// To re-init the MCP2515 with new settings
+ERROR_CAN mcp2515_reinit(MCP2515* mcp_can);
+
 // To close the MCP2515
 void deinit_mcp2515(MCP2515* mcp_can);
 
