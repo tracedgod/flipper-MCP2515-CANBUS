@@ -40,8 +40,8 @@ void saveConfig(App* app) {
     // store settings
     flipper_format_write_header_cstr(fff_file, CONFIG_FILE_HEADER, CONFIG_FILE_VERSION);
 
-    uint32_t temp_bitrate = (uint32_t)app->mcp_can->bitRate;
-    uint32_t temp_clck = (uint32_t)app->mcp_can->clck;
+    uint32_t temp_bitrate = (uint32_t)app->bitrate;
+    uint32_t temp_clck = (uint32_t)app->clock;
     uint32_t temp_slcan_enabled = (uint32_t)app->slcan_enabled;
     flipper_format_write_uint32(fff_file, CONFIG_FILE_KEY_BITRATE, &temp_bitrate, 1);
     flipper_format_write_uint32(fff_file, CONFIG_FILE_KEY_CRYSTAL, &temp_clck, 1);
@@ -87,9 +87,9 @@ void readConfig(App* app) {
     uint32_t temp_bitrate, temp_clck, temp_slcan_enabled;
 
     flipper_format_read_uint32(fff_file, CONFIG_FILE_KEY_BITRATE, &temp_bitrate, 1);
-    app->mcp_can->bitRate = (MCP_BITRATE)temp_bitrate;
+    app->bitrate = (MCP_BITRATE)temp_bitrate;
     flipper_format_read_uint32(fff_file, CONFIG_FILE_KEY_CRYSTAL, &temp_clck, 1);
-    app->mcp_can->clck = (MCP_CLOCK)temp_clck;
+    app->clock = (MCP_CLOCK)temp_clck;
     flipper_format_read_uint32(fff_file, CONFIG_FILE_KEY_SLCAN_ENABLED, &temp_slcan_enabled, 1);
     app->slcan_enabled = (bool)temp_slcan_enabled;
     flipper_format_read_uint32(fff_file, CONFIG_FILE_KEY_SAVELOG, &app->save_logs, 1);
@@ -119,6 +119,7 @@ static void app_tick_event(void* context) {
 
 static App* app_alloc() {
     App* app = malloc(sizeof(App));
+
     app->scene_manager = scene_manager_alloc(&app_scene_handlers, app);
     app->view_dispatcher = view_dispatcher_alloc();
     view_dispatcher_set_custom_event_callback(app->view_dispatcher, app_scene_costum_callback);
@@ -171,7 +172,16 @@ static App* app_alloc() {
     view_dispatcher_add_view(
         app->view_dispatcher, FileBrowserView, file_browser_get_view(app->file_browser));
 
-    app->mcp_can = mcp_alloc(MCP_NORMAL, MCP_16MHZ, MCP_500KBPS);
+    // Set default values
+    app->bitrate = MCP_500KBPS;
+    app->clock = MCP_16MHZ;
+    app->slcan_enabled = true;
+
+    // Load config - this will update app->bitrate and app->clock
+    readConfig(app);
+
+    // Initialize MCP2515 with loaded config values
+    app->mcp_can = mcp_alloc(MCP_NORMAL, app->clock, app->bitrate);
 
     app->frameArray = (CANFRAME*)calloc(100, sizeof(CANFRAME));
 

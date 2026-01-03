@@ -98,6 +98,8 @@ typedef struct {
     bool log_file_ready;
     uint32_t save_logs;
     bool slcan_enabled;
+    MCP_BITRATE bitrate;
+    MCP_CLOCK clock;
 
     // New Logs Objecs
     DialogEx* dialog_ex;

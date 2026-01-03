@@ -123,7 +123,13 @@ bool app_scene_menu_on_event(void* context, SceneManagerEvent event) {
     case SceneManagerEventTypeCustom:
         switch(event.event) {
         case SniffingOptionEvent:
-            scene_manager_next_scene(app->scene_manager, app_scene_sniffer_relay_config_scene);
+            if(app->slcan_enabled) {
+                // If SLCAN is enabled, go to relay config scene first
+                scene_manager_next_scene(app->scene_manager, app_scene_sniffer_relay_config_scene);
+            } else {
+                // If SLCAN is disabled, go directly to sniffing scene
+                scene_manager_next_scene(app->scene_manager, app_scene_sniffing_option);
+            }
             consumed = true;
             break;
 
