@@ -124,7 +124,7 @@ void app_scene_SLCAN_2_CAN_on_enter(void* context) {
 
         dialog_ex_set_header(
             app->dialog_ex,
-            "SLCAN is disabled.\nPlease enable it in\nSettings to use this feature.",
+            "SLCAN is disabled.\nPlease enable it in\nSettings to use this\nfeature.",
             64,
             27,
             AlignCenter,
